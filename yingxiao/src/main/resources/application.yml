@@ -1,0 +1,44 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: yingxiao
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      max-active: 20
+      initial-size: 10
+      min-idle: 10
+      max-wait: 60000
+      time-between-eviction-runs-millis: 30000   # 每 30 s 扫一次空闲连接
+      min-evictable-idle-time-millis: 300000   # 空闲 5 min 就回收
+      max-evictable-idle-time-millis: 540000   # 兜底，最多 9 min（< wait_timeout）
+      keep-alive: true
+      keep-alive-between-time-millis: 300000   # 每 5 min 对空闲连接做一次心跳
+      kill-when-socket-read-timeout: true      # 读超时立即杀掉
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://47.110.132.84:3306/yingxiao?characterEncoding=utf8&connectTimeout=60000&socketTimeout=1800000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: FK#dsyzr7/,k
+  # mybaits-plus??
+  mybatis-plus:
+    mapper-locations: classpath:/mapper/**/*Mapper.xml
+    global-config:
+      banner: false
+      db-config:
+        id-type: auto
+        table-underline: true
+        logic-delete-field: is_delete
+        logic-delete-value: 1
+        logic-not-delete-value: 0
+    configuration:
+      map-underscore-to-camel-case: true
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+# 日志配置
+logging:
+  level:
+    # MyBatis Mapper接口日志
+    com.wjm.yingxiao.mapper: debug

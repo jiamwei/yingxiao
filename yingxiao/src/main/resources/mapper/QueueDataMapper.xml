@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wjm.yingxiao.mapper.QueueDataMapper">
+
+    <!-- 查询所有地点（去重） -->
+    <select id="selectAllLocations" resultType="java.lang.String">
+        SELECT DISTINCT location FROM queue_data ORDER BY location
+    </select>
+
+    <!-- 查询所有品类（去重） -->
+    <select id="selectAllCategories" resultType="java.lang.String">
+        SELECT DISTINCT category FROM queue_data ORDER BY category
+    </select>
+
+    <!-- 查询所有餐馆名称（去重） -->
+    <select id="selectAllRestaurantNames" resultType="java.lang.String">
+        SELECT DISTINCT restaurant_name FROM queue_data ORDER BY restaurant_name
+    </select>
+
+    <!-- 查询最近的整点时间 -->
+    <select id="selectLatestHourTime" resultType="java.util.Date">
+        SELECT MAX(stat_time) FROM queue_data
+        WHERE stat_time = DATE_FORMAT(stat_time, '%Y-%m-%d %H:00:00')
+    </select>
+
+    <!-- 查询每个店铺最新时刻的排队数据 -->
+    <select id="selectQueueDataByCondition" resultType="com.wjm.yingxiao.entity.QueueData">
+        SELECT qd.* FROM queue_data qd
+        INNER JOIN (
+        SELECT restaurant_name, MAX(stat_time) as max_stat_time
+        FROM queue_data
+        WHERE 1=1
+        <if test="location != null and location != ''">
+            AND location = #{location}
+        </if>
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        <if test="restaurantName != null and restaurantName != ''">
+            AND restaurant_name = #{restaurantName}
+        </if>
+        <if test="statTime != null">
+            AND DATE_FORMAT(stat_time, '%Y-%m-%d %H:00:00') = DATE_FORMAT(#{statTime}, '%Y-%m-%d %H:00:00')
+        </if>
+        GROUP BY restaurant_name
+        ) latest ON qd.restaurant_name = latest.restaurant_name
+        AND qd.stat_time = latest.max_stat_time
+        WHERE 1=1
+        <if test="location != null and location != ''">
+            AND qd.location = #{location}
+        </if>
+        <if test="category != null and category != ''">
+            AND qd.category = #{category}
+        </if>
+        <if test="restaurantName != null and restaurantName != ''">
+            AND qd.restaurant_name = #{restaurantName}
+        </if>
+        <if test="statTime != null">
+            AND DATE_FORMAT(qd.stat_time, '%Y-%m-%d %H:00:00') = DATE_FORMAT(#{statTime}, '%Y-%m-%d %H:00:00')
+        </if>
+        ORDER BY qd.stat_time DESC
+    </select>
+
+    <!-- 查询指定餐馆上一个时间点的排队人数 -->
+    <select id="selectLastQueueNumber" resultType="java.lang.Integer">
+        SELECT queue_number FROM queue_data
+        WHERE restaurant_name = #{restaurantName}
+          AND stat_time &lt; #{statTime}
+        ORDER BY stat_time DESC
+            LIMIT 1
+    </select>
+
+    <!-- 查询指定餐馆所有时刻的数据 -->
+    <select id="selectRestaurantAllTimeData" resultType="com.wjm.yingxiao.entity.QueueData">
+        SELECT * FROM queue_data
+        WHERE restaurant_name = #{restaurantName}
+        <if test="location != null and location != ''">
+            AND location = #{location}
+        </if>
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        ORDER BY stat_time DESC
+    </select>
+
+
+    <select id="selectCategoriesByLocation" resultType="java.lang.String">
+        SELECT DISTINCT category FROM queue_data WHERE location = #{location}
+    </select>
+    <select id="selectRestaurantsByLocation" resultType="java.lang.String">
+        SELECT DISTINCT restaurant_name FROM queue_data WHERE location = #{location}
+    </select>
+    <select id="selectLocationsByCondition" resultType="java.lang.String">
+        SELECT DISTINCT location FROM queue_data WHERE 1=1
+        <if test="category != null and category != ''">AND category = #{category}</if>
+        <if test="restaurantName != null and restaurantName != ''">AND restaurant_name = #{restaurantName}</if>
+    </select>
+    <select id="selectRestaurantsByCategory" resultType="java.lang.String">
+        SELECT DISTINCT restaurant_name FROM queue_data WHERE category = #{category}
+    </select>
+    <select id="selectCategoriesByRestaurant" resultType="java.lang.String">
+        SELECT DISTINCT category FROM queue_data WHERE restaurant_name = #{restaurantName}
+    </select>
+    <select id="selectRestaurantsByCondition" resultType="java.lang.String">
+        SELECT DISTINCT restaurant_name FROM queue_data WHERE 1=1
+        <if test="location != null and location != ''">AND location = #{location}</if>
+        <if test="category != null and category != ''">AND category = #{category}</if>
+        <if test="restaurantName != null and restaurantName != ''">AND restaurant_name = #{restaurantName}</if>
+    </select>
+    <select id="selectQueueDataByTimeRange" resultType="com.wjm.yingxiao.entity.QueueData">
+        SELECT * FROM queue_data
+        <where>
+            <if test="location != null and location != ''">
+                AND location = #{location}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="restaurantName != null and restaurantName != ''">
+                AND restaurant_name = #{restaurantName}
+            </if>
+            AND stat_time BETWEEN #{startTime} AND #{endTime}
+        </where>
+        ORDER BY restaurant_name, stat_time
+    </select>
+</mapper>
