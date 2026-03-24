@@ -164,11 +164,17 @@ function queryData() {
     const location = document.getElementById('location').value;
     const category = document.getElementById('category').value;
     const restaurant = document.getElementById('restaurantName').value;
+    const statTimeInput = document.getElementById('statTime').value;
 
     const params = {};
     if (location) params.location = location;
     if (category) params.category = category;
     if (restaurant) params.restaurantName = restaurant;
+
+    if (statTimeInput) {
+        const [date, hour] = statTimeInput.split('T');
+        params.statTime = `${date} ${hour}:00`;
+    }
 
     const queryString = new URLSearchParams(params).toString();
     const url = `/api/queueData${queryString ? '?' + queryString : ''}`;
@@ -191,6 +197,8 @@ function resetForm() {
     document.getElementById('location').value = '';
     document.getElementById('category').value = '';
     document.getElementById('restaurantName').value = '';
+    document.getElementById('statTime').value = '';
+
     if (window.allFilterOptions) {
         updateSelectOptions('location', window.allFilterOptions.locations, false);
         updateSelectOptions('category', window.allFilterOptions.categories, false);
@@ -218,6 +226,10 @@ function renderTable(data) {
             } catch { statTimeStr = item.statTime; }
         }
 
+        // 排队人数样式类
+        const queueNum = item.queueNumber ?? 0;
+        const queueClass = queueNum === 0 ? 'zero' : 'non-zero';
+
         let diffHtml = '<span class="number-zero">0 -</span>';
         if (item.numberDiff > 0) diffHtml = `<span class="number-increase">+${item.numberDiff} ↑</span>`;
         else if (item.numberDiff < 0) diffHtml = `<span class="number-decrease">${item.numberDiff} ↓</span>`;
@@ -227,8 +239,8 @@ function renderTable(data) {
             <td>${item.location || '-'}</td>
             <td>${item.category || '-'}</td>
             <td>${item.restaurantName || '-'}</td>
-            <td><strong>${item.queueNumber ?? 0}</strong></td>
-            <td>${statTimeStr}</td>
+            <td><span class="queue-number ${queueClass}">${queueNum}</span></td>
+            <td class="stat-time">${statTimeStr}</td>
             <td>${diffHtml}</td>
         `;
         tbody.appendChild(tr);
@@ -293,12 +305,16 @@ compareBtn.addEventListener('click', () => {
     // 填充小时下拉框
     populateHourSelect();
 
+    // 设置小时下拉框默认选中当前小时
+    const now = new Date();
+    const currentHour = now.getHours().toString().padStart(2, '0');
+    time1Hour.value = currentHour;
+
     // 清空之前的选择和时间
     compareLocation.value = '';
     compareCategory.value = '';
     compareRestaurant.value = '';
     time1Date.value = '';
-    time1Hour.value = '';
     time2Input.value = '';
     time2Input.disabled = true;
     document.getElementById('compareBody').innerHTML = `
@@ -348,9 +364,8 @@ function onTime1Change() {
     const hourVal = time1Hour.value;
 
     if (dateVal && hourVal) {
-        // 设置 time2 可用，并默认将日期设为与 time1 相同
         time2Input.disabled = false;
-        time2Input.value = dateVal; // 日期相同
+        time2Input.value = dateVal;
     } else {
         time2Input.disabled = true;
         time2Input.value = '';
@@ -374,9 +389,8 @@ compareSearchBtn.addEventListener('click', () => {
         return;
     }
 
-    // 构造完整的 datetime 字符串：yyyy-MM-dd HH:mm:ss
     const time1Full = `${date1} ${hour1}:00:00`;
-    const time2Full = `${date2} ${hour1}:00:00`; // 时间点2的小时与时间点1相同
+    const time2Full = `${date2} ${hour1}:00:00`;
 
     const params = new URLSearchParams();
     if (location) params.append('location', location);
@@ -431,15 +445,21 @@ function renderCompareTable(data) {
         if (diff > 0) diffHtml = `<span class="number-increase">+${diff} ↑</span>`;
         else if (diff < 0) diffHtml = `<span class="number-decrease">${diff} ↓</span>`;
 
-        const row = `<tr>
-            <td>${index + 1}</td>
-            <td>${item.location || '-'}</td>
-            <td>${item.category || '-'}</td>
-            <td>${item.restaurantName || '-'}</td>
-            <td>${item.number1 ?? 0}</td>
-            <td>${item.number2 ?? 0}</td>
-            <td>${diffHtml}</td>
-        </tr>`;
+        // 人数样式
+        const num1Class = (item.number1 || 0) === 0 ? 'zero' : 'non-zero';
+        const num2Class = (item.number2 || 0) === 0 ? 'zero' : 'non-zero';
+
+        const row = `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.location || '-'}</td>
+                <td>${item.category || '-'}</td>
+                <td>${item.restaurantName || '-'}</td>
+                <td><span class="queue-number ${num1Class}">${item.number1 ?? 0}</span></td>
+                <td><span class="queue-number ${num2Class}">${item.number2 ?? 0}</span></td>
+                <td>${diffHtml}</td>
+            </tr>
+        `;
         tbody.insertAdjacentHTML('beforeend', row);
     });
 }

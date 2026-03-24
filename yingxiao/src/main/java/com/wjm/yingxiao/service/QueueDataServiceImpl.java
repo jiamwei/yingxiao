@@ -29,8 +29,13 @@ public class QueueDataServiceImpl implements QueueDataService {
     @Override
     public List<QueueDataVO> getQueueDataWithDiff(String location, String category,
                                                   String restaurantName, Date statTime) {
-        List<QueueData> queueDataList;
+        // 如果选择了具体时间点，使用新逻辑（前后30分钟 + 上一小时对比）
+        if (statTime != null) {
+            return getQueueDataWithDiffBySelectedTime(location, category, restaurantName, statTime);
+        }
 
+        // 原有逻辑：未选择时间点，查询最新整点数据
+        List<QueueData> queueDataList;
         if (restaurantName != null && !restaurantName.isEmpty()) {
             queueDataList = queueDataMapper.selectRestaurantLastMonthData(restaurantName, location, category);
         } else {
@@ -53,6 +58,52 @@ public class QueueDataServiceImpl implements QueueDataService {
             voList.sort(Comparator.comparing(QueueDataVO::getLocation));
         }
         return voList;
+    }
+
+    /**
+     * 新逻辑：根据选中的整点时间，查询前后30分钟数据，并与上一整点前后30分钟数据对比
+     */
+    private List<QueueDataVO> getQueueDataWithDiffBySelectedTime(String location, String category,
+                                                                 String restaurantName, Date statTime) {
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDateTime targetTime = statTime.toInstant().atZone(zone).toLocalDateTime();
+
+        // 当前整点前后30分钟范围
+        LocalDateTime currentStart = targetTime.minusMinutes(30);
+        LocalDateTime currentEnd   = targetTime.plusMinutes(30);
+
+        // 上一整点时间（减1小时）
+        LocalDateTime prevTargetTime = targetTime.minusHours(1);
+        LocalDateTime prevStart = prevTargetTime.minusMinutes(30);
+        LocalDateTime prevEnd   = prevTargetTime.plusMinutes(30);
+
+        // 查询两个时间范围内的所有数据
+        List<QueueData> currentList = queueDataMapper.selectQueueDataByTimeRange(
+                location, category, restaurantName, currentStart, currentEnd);
+        List<QueueData> prevList = queueDataMapper.selectQueueDataByTimeRange(
+                location, category, restaurantName, prevStart, prevEnd);
+
+        // 分别取每组最接近目标时间的数据
+        Map<String, QueueData> currentMap = getClosestToTarget(currentList, statTime);
+        Map<String, QueueData> prevMap = getClosestToTarget(prevList,
+                Date.from(prevTargetTime.atZone(zone).toInstant()));
+
+        List<QueueDataVO> result = new ArrayList<>();
+        for (Map.Entry<String, QueueData> entry : currentMap.entrySet()) {
+            QueueData current = entry.getValue();
+            QueueDataVO vo = new QueueDataVO();
+            BeanUtils.copyProperties(current, vo);
+
+            QueueData prev = prevMap.get(entry.getKey());
+            vo.setNumberDiff(prev != null ? current.getQueueNumber() - prev.getQueueNumber() : 0);
+            result.add(vo);
+        }
+
+        // 按地点、品类、餐馆名称排序，保持与原逻辑一致
+        result.sort(Comparator.comparing(QueueDataVO::getLocation)
+                .thenComparing(QueueDataVO::getCategory)
+                .thenComparing(QueueDataVO::getRestaurantName));
+        return result;
     }
 
     @Override

@@ -41,10 +41,16 @@
                             <option value="">全部餐馆</option>
                         </select>
                     </div>
-                    <div class="form-actions">
-                        <button id="searchBtn" class="btn primary-btn"><i class="bi bi-search"></i> 查询</button>
-                        <button id="resetBtn" class="btn default-btn"><i class="bi bi-arrow-counterclockwise"></i> 重置</button>
-                        <button id="compareBtn" class="btn default-btn"><i class="bi bi-bar-chart-steps"></i> 对比</button>
+                    <div class="form-group-time-actions">
+                        <div class="form-group">
+                            <label for="statTime"><i class="bi bi-calendar-clock"></i> 时间点</label>
+                            <input type="datetime-local" id="statTime" step="3600">
+                        </div>
+                        <div class="form-actions">
+                            <button id="searchBtn" class="btn primary-btn"><i class="bi bi-search"></i> 查询</button>
+                            <button id="resetBtn" class="btn ghost-btn"><i class="bi bi-arrow-counterclockwise"></i> 重置</button>
+                            <button id="compareBtn" class="btn ghost-btn"><i class="bi bi-bar-chart-steps"></i> 对比</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -136,7 +142,7 @@
                 <!-- 按钮组单独一行，右对齐 -->
                 <div class="form-actions compare-actions">
                     <button id="compareSearchBtn" class="btn primary-btn"><i class="bi bi-search"></i> 查询对比</button>
-                    <button id="compareResetBtn" class="btn default-btn"><i class="bi bi-arrow-counterclockwise"></i> 重置</button>
+                    <button id="compareResetBtn" class="btn ghost-btn"><i class="bi bi-arrow-counterclockwise"></i> 重置</button>
                 </div>
             </div>
             <!-- 对比结果表格 -->
