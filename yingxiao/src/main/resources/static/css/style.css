@@ -8,7 +8,7 @@
 
 /* 全局变量定义 */
 :root {
-    --primary-color: #2563EB;      /* 降低饱和度的主色 */
+    --primary-color: #2563EB;
     --primary-light: #E8F3FF;
     --primary-hover: #1E4DB5;
     --success-color: #00B42A;
@@ -537,7 +537,7 @@ body {
     padding: 24px;
 }
 
-/* 对比表单布局 */
+/* 对比表单布局 - 两个时间点横向排列 */
 .compare-form {
     display: flex;
     flex-wrap: wrap;
@@ -547,28 +547,41 @@ body {
 .compare-form .form-group {
     flex: 1 1 200px;
 }
-.compare-form .time-group {
-    flex: 2 1 300px;
-}
-.time-group .time-picker {
+.compare-time-wrapper {
     display: flex;
-    gap: 8px;
+    gap: 20px;
+    flex: 2 1 500px;
+    align-items: flex-end;
 }
-.time-group .date-input {
-    flex: 3;
-    min-width: 0;
-}
-.time-group .hour-select {
+.compare-time-wrapper .form-group {
     flex: 1;
-    min-width: 80px;
+    min-width: 160px;
+}
+.time-picker-single {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.hour-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
 }
 .compare-actions {
     flex: 0 0 auto;
     margin-left: auto;
 }
 @media (max-width: 768px) {
-    .compare-form {
+    .compare-time-wrapper {
         flex-direction: column;
+        gap: 16px;
+        width: 100%;
+    }
+    .compare-time-wrapper .form-group {
+        width: 100%;
+    }
+    .hour-hint {
+        white-space: normal;
     }
     .compare-actions {
         margin-left: 0;

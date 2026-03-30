@@ -42,9 +42,16 @@
                         </select>
                     </div>
                     <div class="form-group-time-actions">
+                        <!-- 改动：日期 + 小时下拉，确保只选整点 -->
                         <div class="form-group">
-                            <label for="statTime"><i class="bi bi-calendar-clock"></i> 时间点</label>
-                            <input type="datetime-local" id="statTime" step="3600">
+                            <label for="statTimeDate"><i class="bi bi-calendar-date"></i> 日期</label>
+                            <input type="date" id="statTimeDate" class="date-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="statTimeHour"><i class="bi bi-clock"></i> 小时</label>
+                            <select id="statTimeHour" class="hour-select">
+                                <option value="">小时</option>
+                            </select>
                         </div>
                         <div class="form-actions">
                             <button id="searchBtn" class="btn primary-btn"><i class="bi bi-search"></i> 查询</button>
@@ -96,7 +103,7 @@
     </footer>
 </div>
 
-<!-- 对比模态框 -->
+<!-- 对比模态框（未改动） -->
 <div id="compareModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -104,7 +111,6 @@
             <span class="close">&times;</span>
         </div>
         <div class="modal-body">
-            <!-- 筛选条件 -->
             <div class="filter-form compare-form">
                 <div class="form-group">
                     <label for="compareLocation"><i class="bi bi-geo-alt-fill"></i> 地点</label>
@@ -124,28 +130,32 @@
                         <option value="">全部餐馆</option>
                     </select>
                 </div>
-                <!-- 时间点1：日期选择器 + 小时下拉框（无分钟） -->
-                <div class="form-group time-group">
-                    <label><i class="bi bi-clock"></i> 时间点1</label>
-                    <div class="time-picker">
-                        <input type="date" id="time1Date" class="date-input" />
-                        <select id="time1Hour" class="hour-select">
-                            <option value="">小时</option>
-                        </select>
+
+                <div class="compare-time-wrapper">
+                    <div class="form-group time-group">
+                        <label><i class="bi bi-clock"></i> 时间点1</label>
+                        <div class="time-picker">
+                            <input type="date" id="time1Date" class="date-input" />
+                            <select id="time1Hour" class="hour-select">
+                                <option value="">小时</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="bi bi-calendar"></i> 时间点2</label>
+                        <div class="time-picker-single">
+                            <input type="date" id="time2" disabled />
+                            <span id="hourHint" class="hour-hint"></span>
+                        </div>
                     </div>
                 </div>
-                <!-- 时间点2：日期选择器（时分固定为时间点1的小时） -->
-                <div class="form-group">
-                    <label for="time2"><i class="bi bi-calendar"></i> 时间点2</label>
-                    <input type="date" id="time2" disabled />
-                </div>
-                <!-- 按钮组单独一行，右对齐 -->
+
                 <div class="form-actions compare-actions">
                     <button id="compareSearchBtn" class="btn primary-btn"><i class="bi bi-search"></i> 查询对比</button>
                     <button id="compareResetBtn" class="btn ghost-btn"><i class="bi bi-arrow-counterclockwise"></i> 重置</button>
                 </div>
             </div>
-            <!-- 对比结果表格 -->
+
             <div class="table-wrapper">
                 <table id="compareTable">
                     <thead>

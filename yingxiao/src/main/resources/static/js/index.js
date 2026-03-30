@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.isUpdating = false;
     window.isCompareUpdating = false;
 
+    // 初始化主页面小时下拉框（0-23）
+    initHourSelect('statTimeHour');
     // 加载下拉框选项
     loadFilterOptions();
 
@@ -24,6 +26,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始加载所有数据
     queryData();
 });
+
+/**
+ * 初始化小时下拉框 (00-23)
+ */
+function initHourSelect(selectId) {
+    const hourSelect = document.getElementById(selectId);
+    if (!hourSelect) return;
+    hourSelect.innerHTML = '<option value="">小时</option>';
+    for (let i = 0; i < 24; i++) {
+        const hour = i.toString().padStart(2, '0');
+        const option = document.createElement('option');
+        option.value = hour;
+        option.textContent = hour + '点';
+        hourSelect.appendChild(option);
+    }
+}
 
 /**
  * 加载筛选下拉框选项
@@ -164,16 +182,17 @@ function queryData() {
     const location = document.getElementById('location').value;
     const category = document.getElementById('category').value;
     const restaurant = document.getElementById('restaurantName').value;
-    const statTimeInput = document.getElementById('statTime').value;
+    const statTimeDate = document.getElementById('statTimeDate').value;
+    const statTimeHour = document.getElementById('statTimeHour').value;
 
     const params = {};
     if (location) params.location = location;
     if (category) params.category = category;
     if (restaurant) params.restaurantName = restaurant;
 
-    if (statTimeInput) {
-        const [date, hour] = statTimeInput.split('T');
-        params.statTime = `${date} ${hour}:00`;
+    // 只有日期和小时都选择了才传递整点时间 (格式: yyyy-MM-dd HH:00:00)
+    if (statTimeDate && statTimeHour) {
+        params.statTime = `${statTimeDate} ${statTimeHour}:00:00`;
     }
 
     const queryString = new URLSearchParams(params).toString();
@@ -197,7 +216,8 @@ function resetForm() {
     document.getElementById('location').value = '';
     document.getElementById('category').value = '';
     document.getElementById('restaurantName').value = '';
-    document.getElementById('statTime').value = '';
+    document.getElementById('statTimeDate').value = '';
+    document.getElementById('statTimeHour').value = '';
 
     if (window.allFilterOptions) {
         updateSelectOptions('location', window.allFilterOptions.locations, false);
@@ -226,7 +246,6 @@ function renderTable(data) {
             } catch { statTimeStr = item.statTime; }
         }
 
-        // 排队人数样式类
         const queueNum = item.queueNumber ?? 0;
         const queueClass = queueNum === 0 ? 'zero' : 'non-zero';
 
@@ -259,7 +278,7 @@ function showError(msg) {
     `;
 }
 
-// ==================== 对比页面逻辑 ====================
+// ==================== 对比页面逻辑（未改动，保持原有功能） ====================
 const compareModal = document.getElementById('compareModal');
 const compareBtn = document.getElementById('compareBtn');
 const closeModal = document.querySelector('#compareModal .close');
@@ -271,10 +290,10 @@ const compareResetBtn = document.getElementById('compareResetBtn');
 const compareLocation = document.getElementById('compareLocation');
 const compareCategory = document.getElementById('compareCategory');
 const compareRestaurant = document.getElementById('compareRestaurant');
+const hourHintSpan = document.getElementById('hourHint');
 
-// 填充小时下拉框（00-23）
-function populateHourSelect() {
-    const hourSelect = document.getElementById('time1Hour');
+function populateCompareHourSelect() {
+    const hourSelect = time1Hour;
     hourSelect.innerHTML = '<option value="">小时</option>';
     for (let i = 0; i < 24; i++) {
         const hour = i.toString().padStart(2, '0');
@@ -285,9 +304,29 @@ function populateHourSelect() {
     }
 }
 
-// 打开模态框
+function updateHourHint() {
+    const hourVal = time1Hour.value;
+    if (hourVal && hourHintSpan) {
+        hourHintSpan.textContent = `（小时：${hourVal}:00 与时间点1相同）`;
+    } else if (hourHintSpan) {
+        hourHintSpan.textContent = '';
+    }
+}
+
+function onTime1Change() {
+    const dateVal = time1Date.value;
+    const hourVal = time1Hour.value;
+    if (dateVal && hourVal) {
+        time2Input.disabled = false;
+        time2Input.value = dateVal;
+    } else {
+        time2Input.disabled = true;
+        time2Input.value = '';
+    }
+    updateHourHint();
+}
+
 compareBtn.addEventListener('click', () => {
-    // 填充对比面板的下拉框
     if (window.allFilterOptions) {
         fillSelect('compareLocation', window.allFilterOptions.locations);
         fillSelect('compareCategory', window.allFilterOptions.categories);
@@ -302,32 +341,28 @@ compareBtn.addEventListener('click', () => {
                 fillSelect('compareRestaurant', data.restaurantNames);
             });
     }
-    // 填充小时下拉框
-    populateHourSelect();
+    populateCompareHourSelect();
 
-    // 设置小时下拉框默认选中当前小时
     const now = new Date();
     const currentHour = now.getHours().toString().padStart(2, '0');
     time1Hour.value = currentHour;
 
-    // 清空之前的选择和时间
     compareLocation.value = '';
     compareCategory.value = '';
     compareRestaurant.value = '';
     time1Date.value = '';
     time2Input.value = '';
     time2Input.disabled = true;
+    if (hourHintSpan) hourHintSpan.textContent = '';
     document.getElementById('compareBody').innerHTML = `
         <tr class="empty-row"><td colspan="7"><div class="empty-state"><i class="bi bi-inbox"></i><p>请选择时间点并点击查询</p></div></td></tr>
     `;
     compareModal.style.display = 'flex';
 });
 
-// 关闭模态框
 closeModal.addEventListener('click', () => compareModal.style.display = 'none');
 window.addEventListener('click', (e) => { if (e.target === compareModal) compareModal.style.display = 'none'; });
 
-// 绑定对比面板下拉框 change 事件
 compareLocation.addEventListener('change', onCompareFilterChange);
 compareCategory.addEventListener('change', onCompareFilterChange);
 compareRestaurant.addEventListener('change', onCompareFilterChange);
@@ -358,24 +393,9 @@ async function updateCompareDropdowns() {
     updateSelectOptions('compareRestaurant', restaurants, true);
 }
 
-// 时间点1的日期或小时变化时，更新 time2 的可用状态和默认日期
-function onTime1Change() {
-    const dateVal = time1Date.value;
-    const hourVal = time1Hour.value;
-
-    if (dateVal && hourVal) {
-        time2Input.disabled = false;
-        time2Input.value = dateVal;
-    } else {
-        time2Input.disabled = true;
-        time2Input.value = '';
-    }
-}
-
 time1Date.addEventListener('change', onTime1Change);
 time1Hour.addEventListener('change', onTime1Change);
 
-// 查询对比数据
 compareSearchBtn.addEventListener('click', () => {
     const location = compareLocation.value;
     const category = compareCategory.value;
@@ -410,7 +430,6 @@ compareSearchBtn.addEventListener('click', () => {
         });
 });
 
-// 对比重置按钮
 compareResetBtn.addEventListener('click', () => {
     compareLocation.value = '';
     compareCategory.value = '';
@@ -419,6 +438,7 @@ compareResetBtn.addEventListener('click', () => {
     time1Hour.value = '';
     time2Input.value = '';
     time2Input.disabled = true;
+    if (hourHintSpan) hourHintSpan.textContent = '';
     if (window.allFilterOptions) {
         updateSelectOptions('compareLocation', window.allFilterOptions.locations, false);
         updateSelectOptions('compareCategory', window.allFilterOptions.categories, false);
@@ -429,7 +449,6 @@ compareResetBtn.addEventListener('click', () => {
     `;
 });
 
-// 渲染对比表格
 function renderCompareTable(data) {
     const tbody = document.getElementById('compareBody');
     tbody.innerHTML = '';
@@ -440,14 +459,22 @@ function renderCompareTable(data) {
     }
 
     data.forEach((item, index) => {
-        const diff = (item.number2 || 0) - (item.number1 || 0);
-        let diffHtml = '<span class="number-zero">0</span>';
-        if (diff > 0) diffHtml = `<span class="number-increase">+${diff} ↑</span>`;
-        else if (diff < 0) diffHtml = `<span class="number-decrease">${diff} ↓</span>`;
+        const num1 = item.number1 ?? 0;
+        const num2 = item.number2 ?? 0;
 
-        // 人数样式
-        const num1Class = (item.number1 || 0) === 0 ? 'zero' : 'non-zero';
-        const num2Class = (item.number2 || 0) === 0 ? 'zero' : 'non-zero';
+        const displayNum1 = num1 === -1 ? '未开通排队' : num1;
+        const displayNum2 = num2 === -1 ? '未开通排队' : num2;
+
+        let diffHtml = '<span class="number-zero">-</span>';
+        if (num1 !== -1 && num2 !== -1) {
+            const diff = num2 - num1;
+            if (diff > 0) diffHtml = `<span class="number-increase">+${diff} ↑</span>`;
+            else if (diff < 0) diffHtml = `<span class="number-decrease">${diff} ↓</span>`;
+            else diffHtml = '<span class="number-zero">0</span>';
+        }
+
+        const num1Class = (num1 !== -1 && num1 !== 0) ? 'non-zero' : (num1 === 0 ? 'zero' : '');
+        const num2Class = (num2 !== -1 && num2 !== 0) ? 'non-zero' : (num2 === 0 ? 'zero' : '');
 
         const row = `
             <tr>
@@ -455,8 +482,8 @@ function renderCompareTable(data) {
                 <td>${item.location || '-'}</td>
                 <td>${item.category || '-'}</td>
                 <td>${item.restaurantName || '-'}</td>
-                <td><span class="queue-number ${num1Class}">${item.number1 ?? 0}</span></td>
-                <td><span class="queue-number ${num2Class}">${item.number2 ?? 0}</span></td>
+                <td><span class="queue-number ${num1Class}">${displayNum1}</span></td>
+                <td><span class="queue-number ${num2Class}">${displayNum2}</span></td>
                 <td>${diffHtml}</td>
             </tr>
         `;
